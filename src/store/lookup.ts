@@ -47,7 +47,7 @@ async function lookup(browser: Browser, store: Store) {
 		if (store.disableAdBlocker) {
 			try {
 				await disableBlockerInPage(page);
-			} catch (error) {
+			} catch (error: unknown) {
 				logger.error(error);
 			}
 		}
@@ -56,7 +56,7 @@ async function lookup(browser: Browser, store: Store) {
 
 		try {
 			statusCode = await lookupCard(browser, store, page, link);
-		} catch (error) {
+		} catch (error: unknown) {
 			logger.error(`✖ [${store.name}] ${link.brand} ${link.series} ${link.model} - ${error.message as string}`);
 			const client = await page.target().createCDPSession();
 			await client.send('Network.clearBrowserCookies');
@@ -100,11 +100,7 @@ async function lookupCard(browser: Browser, store: Store, page: Page, link: Link
 		logger.info(`${Print.inStock(link, store, true)}\n${givenUrl}`);
 
 		if (config.browser.open) {
-			if (link.openCartAction === undefined) {
-				await open(givenUrl);
-			} else {
-				await link.openCartAction(browser);
-			}
+			await (link.openCartAction === undefined ? open(givenUrl) : link.openCartAction(browser));
 		}
 
 		sendNotification(link, store);
@@ -208,8 +204,8 @@ export async function tryLookupAndLoop(browser: Browser, store: Store) {
 			try {
 				await fetchLinks(store, browser);
 				linkBuilderLastRunTimes[store.name] = Date.now();
-			} catch (error) {
-				logger.error(error.message);
+			} catch (error: unknown) {
+				logger.error(error);
 			}
 		}
 	}
@@ -217,7 +213,7 @@ export async function tryLookupAndLoop(browser: Browser, store: Store) {
 	logger.debug(`[${store.name}] Starting lookup...`);
 	try {
 		await lookup(browser, store);
-	} catch (error) {
+	} catch (error: unknown) {
 		logger.error(error);
 	}
 
